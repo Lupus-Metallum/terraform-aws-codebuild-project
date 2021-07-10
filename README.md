@@ -6,7 +6,8 @@ This configures everything except Auth to source control.
 
 ``` Terraform
 module "codebuild_example" {
-  source                    = lupusmetalum/aws/codebuild-project
+  source                    = "Lupus-Metallum/codebuild-project/aws"
+  version                   = "1.0.0
   name                      = "Example"
   description               = "This is an example"
   build_timeout             = 5
