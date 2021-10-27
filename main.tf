@@ -3,7 +3,7 @@ locals {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  for_each          = var.enable_logs == true ? [1] : []
+  count             = var.enable_logs == true ? 1 : 0
   name              = "/aws/codebuild/${var.name}"
   retention_in_days = var.cloudwatch_retention_days
   kms_key_id        = var.cloudwatch_kms_key_arn
