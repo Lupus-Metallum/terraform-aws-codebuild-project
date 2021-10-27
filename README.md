@@ -23,8 +23,9 @@ module "codebuild_example" {
   source_version            = "dev"
   build_spec                = file("./src/buildspec.yml")
   enable_logs               = true
-  log_group_name            = "CloudBuild-Example"
-  log_stream_name           = "CodeBuild"
+  cloudwatch_kms_key_arn    = "arn:..."
+  cloudwatch_retention_days = 14
+  log_stream_name           = "my-stream"
   environment_variables = {
     "IMAGE_REPO_NAME"    = "example"
     "AWS_DEFAULT_REGION" = data.aws_region.current.name

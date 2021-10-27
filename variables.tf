@@ -121,7 +121,7 @@ variable "enable_logs" {
   default     = false
 }
 
-variable "cloudwatch_kms_key" {
+variable "cloudwatch_kms_key_arn" {
   type        = string
   default     = ""
   description = "What is the KMS Key ID that we should encrypt logs with"
