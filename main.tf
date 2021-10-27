@@ -2,6 +2,20 @@ locals {
   service_role_arn = var.service_role_arn != "" ? var.service_role_arn : aws_iam_role.this[0].arn
 }
 
+resource "aws_cloudwatch_log_group" "this" {
+  for_each          = var.enable_logs == true ? [1] : []
+  name              = "/aws/codebuild/${var.name}"
+  retention_in_days = var.cloudwatch_retention_days
+  kms_key_id        = var.cloudwatch_kms_key_arn
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "/aws/codebuild/${var.name}",
+    },
+  )
+}
+
 resource "aws_codebuild_project" "this" {
   name                   = var.name
   description            = var.description
@@ -70,7 +84,7 @@ resource "aws_codebuild_project" "this" {
     for_each = var.enable_logs == true ? [1] : []
     content {
       cloudwatch_logs {
-        group_name  = var.log_group_name
+        group_name  = aws_cloudwatch_log_group.this[0].name
         stream_name = var.log_stream_name
       }
     }
@@ -91,7 +105,7 @@ resource "aws_codebuild_project" "this" {
 data "aws_iam_policy_document" "this" {
   count = var.service_role_arn == "" ? 1 : 0
   statement {
-    effect   = "Allow"
+    effect    = "Allow"
     resources = ["arn:aws:s3:::codepipeline-${data.aws_region.current.name}-*"]
     actions = [
       "s3:PutObject",
@@ -102,7 +116,7 @@ data "aws_iam_policy_document" "this" {
     ]
   }
   statement {
-    effect   = "Allow"
+    effect    = "Allow"
     resources = ["arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:report-group/${var.name}-*"]
     actions = [
       "codebuild:CreateReportGroup",
@@ -196,22 +210,22 @@ resource "aws_iam_role" "this" {
   count              = var.service_role_arn == "" ? 1 : 0
   name               = "codebuild-${var.name}-service-role"
   assume_role_policy = data.aws_iam_policy_document.this_assume[0].json
-  path = "/service-role/"
+  path               = "/service-role/"
 }
 
 resource "aws_iam_policy" "this" {
-  count = var.service_role_arn == "" ? 1 : 0
-  name  = "CodeBuildBasePolicy-${var.name}-${data.aws_region.current.name}"
-  policy = data.aws_iam_policy_document.this[0].json
-  path = "/service-role/"
+  count       = var.service_role_arn == "" ? 1 : 0
+  name        = "CodeBuildBasePolicy-${var.name}-${data.aws_region.current.name}"
+  policy      = data.aws_iam_policy_document.this[0].json
+  path        = "/service-role/"
   description = "Policy used in trust relationship with CodeBuild"
 }
 
 resource "aws_iam_policy" "this_cloudwatch" {
-  count = (var.enable_logs && var.service_role_arn == "") ? 1 : 0
-  name  = "CodeBuildCloudWatchLogsPolicy-${var.name}-${data.aws_region.current.name}"
-  policy = data.aws_iam_policy_document.this_cloudwatch[0].json
-  path = "/service-role/"
+  count       = (var.enable_logs && var.service_role_arn == "") ? 1 : 0
+  name        = "CodeBuildCloudWatchLogsPolicy-${var.name}-${data.aws_region.current.name}"
+  policy      = data.aws_iam_policy_document.this_cloudwatch[0].json
+  path        = "/service-role/"
   description = "Policy used in trust relationship with CodeBuild"
 }
 
@@ -248,7 +262,7 @@ resource "aws_iam_role_policy_attachment" "this_AmazonEC2ContainerRegistryFullAc
 # }
 
 resource "aws_codestarnotifications_notification_rule" "this" {
-  for_each = { for rule in var.notification_rules : rule.notification_name => rule }
+  for_each       = { for rule in var.notification_rules : rule.notification_name => rule }
   detail_type    = each.value.notification_detail
   event_type_ids = each.value.notification_events
 
@@ -257,19 +271,19 @@ resource "aws_codestarnotifications_notification_rule" "this" {
 
   target {
     address = each.value.notification_arn
-    type = each.value.notification_type
+    type    = each.value.notification_type
   }
 }
 
 resource "aws_codebuild_webhook" "this" {
-  for_each = { for webhook in var.webhooks : webhook.branch => webhook }
+  for_each     = { for webhook in var.webhooks : webhook.branch => webhook }
   project_name = aws_codebuild_project.this.name
-  
+
   filter_group {
     filter {
       exclude_matched_pattern = false
-      pattern = join(", ", each.value.events)
-      type    = "EVENT"
+      pattern                 = join(", ", each.value.events)
+      type                    = "EVENT"
     }
 
     filter {

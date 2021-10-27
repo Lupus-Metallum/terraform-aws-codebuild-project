@@ -121,15 +121,22 @@ variable "enable_logs" {
   default     = false
 }
 
-variable "log_group_name" {
-  description = "Name of log group to use for builds, requires enable_logs=true"
+variable "cloudwatch_kms_key" {
   type        = string
   default     = ""
+  description = "What is the KMS Key ID that we should encrypt logs with"
+}
+
+variable "cloudwatch_retention_days" {
+  type        = number
+  default     = 14
+  description = "How many days should we retain logs"
 }
 
 variable "log_stream_name" {
   description = "Name of log stream to use for builds, requires enable_logs=true"
   default     = ""
+  type        = string
 }
 
 variable "use_vpc" {
@@ -188,14 +195,14 @@ variable "add_ecr_write_permissions" {
 
 variable "notification_rules" {
   description = "Disable or enable notifications"
-  type        = list(object({
-    notification_arn = string
-    notification_type = string
-    notification_name = string
+  type = list(object({
+    notification_arn    = string
+    notification_type   = string
+    notification_name   = string
     notification_detail = string
     notification_events = list(string)
   }))
-  default     = []
+  default = []
 }
 
 variable "webhooks" {
